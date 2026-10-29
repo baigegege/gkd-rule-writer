@@ -136,6 +136,17 @@ node scripts/verify_selector.mjs cainiao.json '[vid="vip_banner_fl_button_close_
 - `analyze_snapshot.py`：Python 3（仅标准库，无需安装）。
 - `verify_selector.mjs`：Node.js 22+。首次运行自动 `npm install @gkd-kit/selector@0.5.23`（官方选择器引擎，已锁版本——最新版 API 已改会报错）。
 
+## 关于默认分支：为什么是 main 而不是 master
+
+克隆本仓库时请确认你拉到的是 **`main` 分支**——本仓库的规则、脚本、文档全在 `main` 上。如果 clone 下来是空的，多半是拉到了旧的 `master` 分支：那是 GitHub 建仓时自动生成的默认分支，本仓库已不再需要它，认准 `main` 即可。
+
+顺带把这两个词的区别讲清楚，免得 fork 时犯懵：
+
+- **`master` 和 `main` 技术上一模一样**，都只是 Git 分支的名字，代表"主分支"。差异只有叫法，对你写规则、跑脚本零影响。
+- **词面意思**：`master` 是"主人 / 母带（录音工业的原始带）"，`main` 是"主要的 / 主干"。在 Git 语境里两者都指"仓库主干"，`main` 反而更直白准确。
+- **为什么要改**：计算机里有一套 `master / slave`（主 / 从）术语（主从数据库、主从设备……），其中 `slave` 直译就是"奴隶"。2020 年 BLM 运动之后，科技行业系统性把这类带种族暗示的词换掉（同理还有 `blacklist/whitelist` → `blocklist/allowlist`）。Git 的 `master` 虽未必直接指奴隶（Git 维护者解释灵感更可能来自录音"母带"），但属于同一命名体系，于是也被纳入审视范围。
+- **时间线**：2020 年 6 月 Git 与 GitHub 先后表态要改默认分支名；**2020 年 10 月 GitHub 正式把新建仓库的默认分支从 `master` 改为 `main`**。所以现在的新仓库默认都是 `main`，还停在 `master` 的是改名运动前的老仓库——纯粹是时代差。
+
 ## 许可证
 
 [MIT](./LICENSE) —— 自由使用、修改、分发。
