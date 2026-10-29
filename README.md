@@ -54,12 +54,80 @@ cp -r . ~/.codebuddy/skills/gkd-rule-writer
 
 不需要装 skill，直接看 `SKILL.md` + `references/` 两份文档，按里面的步骤手动写规则也完全够用。`references/gkd-cheatsheet.md` 是口语化速查表，`references/snapshot-workflow.md` 是带真实截图的案例拆解。
 
-## 典型使用流程（agent 视角）
+## 怎么用
 
-1. 用户发 GKD 快照 `.zip`（长按悬浮窗 → 快照审查 → 导出）或 `i.gkd.li` 链接。
-2. `python3 scripts/analyze_snapshot.py snap.zip --grep 广告|关闭|取消` 分析节点树。
+这个仓库对两类人都有用——不管你有没有 AI 客户端。
+
+### 情况一：你用 CodeBuddy（或支持 skill 的 AI 客户端）
+
+1. **装好 skill**（见上方「方式 A」）。
+2. **在手机上截快照**：打开 GKD App → 进到想关广告/弹窗的界面 → 长按 GKD 悬浮窗 → 快照审查 → 右上角「导出」（会得到一个 `.zip`）。
+3. **把 zip 甩给 AI**，说一句「写个规则关掉这个广告」。AI 会自己跑分析脚本 + 官方引擎验证，最后给你一段可直接粘贴的 JSON5 规则。
+
+### 情况二：你自己手动写（不用 AI 也行）
+
+1. 拉仓库：`git clone https://github.com/baigegege/gkd-rule-writer.git`
+2. 拿到快照 zip，定位按钮：
+   ```bash
+   python3 scripts/analyze_snapshot.py snap.zip --grep 广告|关闭|取消
+   ```
+3. 写候选选择器，用官方引擎验证是否真命中（这一步最值钱，不靠猜）：
+   ```bash
+   node scripts/verify_selector.mjs snap.json '[vid="目标按钮的id"]'
+   ```
+4. 照 `references/gkd-cheatsheet.md` 配好防误触字段，写成 JSON5。
+
+### 最小示例（以菜鸟 VIP 横幅广告为例）
+
+拿到快照后跑：
+
+```bash
+python3 scripts/analyze_snapshot.py cainiao.zip --grep 关闭
+# 找到 vid="vip_banner_fl_button_close_view"（菜鸟自己把 close 写进资源名了）
+node scripts/verify_selector.mjs cainiao.json '[vid="vip_banner_fl_button_close_view"]'
+# ✅ 命中 ImageView，本屏唯一匹配，clickable=true
+```
+
+于是得到这条规则（完整 JSON5）：
+
+```json5
+{
+  id: 'com.cainiao.wireless',
+  name: '菜鸟',
+  groups: [
+    {
+      key: 1,
+      name: '物流详情-VIP横幅广告关闭',
+      activityIds: ['com.taobao.cainiao.logistic.ui.view.LogisticDetailActivity'],
+      actionMaximum: 1,
+      resetMatch: 'activity',
+      actionDelay: 500,
+      rules: [
+        { key: 0, fastQuery: true, matches: '[vid="vip_banner_fl_button_close_view"]' },
+      ],
+    },
+  ],
+}
+```
+
+### 把规则用进 GKD App
+
+不管规则是 AI 给的还是自己写的，用法一样：
+
+1. 打开 GKD → 首页「订阅」→「本地订阅」→「应用规则」
+2. 右上角「+」→ 粘贴整段 JSON5 → 保存
+3. 回到 GKD 首页，确认该 App 的开关已打开。下一次出现广告/弹窗，规则会自动点掉。
+
+> 想看更多真实案例（知乎怎么串两步、微信朋友圈怎么点无障碍盲区的「广告」按钮、喜马拉雅 6 个选项同 id 怎么区分），看 `references/snapshot-workflow.md`。
+
+### 背后发生了什么（agent 工作流）
+
+如果你用 AI，它内部会走这套流程（手动写规则时你也可照抄）：
+
+1. 接收快照 `.zip` 或 `i.gkd.li` 链接。
+2. `analyze_snapshot.py` 解压并列出节点树。
 3. 构造候选选择器（优先稳定 `vid`/`id`，并列 vid 用文字锚定父容器）。
-4. `node scripts/verify_selector.mjs snap.json '候选选择器'` **实跑验证命中**。
+4. `verify_selector.mjs` **实跑验证命中**——确认精确命中、本屏唯一。
 5. 配防误触字段（`actionMaximum`/`excludeMatches`/`preKeys`/`actionDelay`）。
 6. 输出可直接粘贴进 GKD → 订阅 → 本地订阅 → 应用规则 → `+` 的 JSON5。
 
